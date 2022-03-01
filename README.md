@@ -1,2 +1,2 @@
 # jaira-terraform-azure
-Terraform sample scripts for azure deployment
+Sample Terraform Scripts as proof-of-concept implementation on Azure for Jaira
