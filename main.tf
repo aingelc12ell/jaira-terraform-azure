@@ -3,8 +3,8 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "aingelrg1" {
-  name     = "Session1"
-  location = "southeastasia"
+  name     = "Session1.1"
+  location = "eastus"
   tags = {
     Owner = "Aingel Carbonell"
     environment = "Jaira Tutorials"
@@ -15,7 +15,7 @@ resource "azurerm_resource_group" "aingelrg1" {
 resource "azurerm_virtual_network" "aingelnet" {
     name                = "myVnet"
     address_space       = ["192.168.0.0/16"]
-    location            = "southeastasia"
+    location            = "eastus"
     resource_group_name = azurerm_resource_group.aingelrg1.name
 
     tags = {
@@ -34,7 +34,7 @@ resource "azurerm_subnet" "subnet0" {
 # Create public IPs
 resource "azurerm_public_ip" "publicip" {
     name                         = "myPublicIP"
-    location                     = "southeastasia"
+    location                     = "eastus"
     resource_group_name          = azurerm_resource_group.aingelrg1.name
     allocation_method            = "Dynamic"
 
@@ -46,17 +46,17 @@ resource "azurerm_public_ip" "publicip" {
 # Create Network Security Group and rule
 resource "azurerm_network_security_group" "netsecgroup" {
     name                = "myNetworkSecurityGroup"
-    location            = "southeastasia"
+    location            = "eastus"
     resource_group_name = azurerm_resource_group.aingelrg1.name
 
     security_rule {
-        name                       = "SSH"
+        name                       = "SSH+Web"
         priority                   = 1001
         direction                  = "Inbound"
         access                     = "Allow"
         protocol                   = "Tcp"
         source_port_range          = "*"
-        destination_port_range     = "22"
+        destination_port_range     = "22,80"
         source_address_prefix      = "*"
         destination_address_prefix = "*"
     }
@@ -69,7 +69,7 @@ resource "azurerm_network_security_group" "netsecgroup" {
 # Create network interface
 resource "azurerm_network_interface" "mynic" {
     name                      = "myNIC"
-    location                  = "southeastasia"
+    location                  = "eastus"
     resource_group_name       = azurerm_resource_group.aingelrg1.name
 
     ip_configuration {
@@ -104,7 +104,7 @@ resource "random_id" "randomId" {
 resource "azurerm_storage_account" "mystorageaccount" {
     name                        = "diag${random_id.randomId.hex}"
     resource_group_name         = azurerm_resource_group.aingelrg1.name
-    location                    = "southeastasia"
+    location                    = "eastus"
     account_tier                = "Standard"
     account_replication_type    = "LRS"
 
@@ -126,10 +126,10 @@ output "tls_private_key" {
 # Create virtual machine
 resource "azurerm_linux_virtual_machine" "myvm" {
     name                  = "myVM"
-    location              = "southeastasia"
+    location              = "eastus"
     resource_group_name   = azurerm_resource_group.aingelrg1.name
     network_interface_ids = [azurerm_network_interface.mynic.id]
-    size                  = "Standard_B1s"
+    size                  = "Standard_DS1_v2"
 
     os_disk {
         name              = "myOsDisk"
