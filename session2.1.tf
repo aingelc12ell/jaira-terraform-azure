@@ -1,5 +1,4 @@
-## Provisions for ContainerVMs
-## Multiple NICs per container
+## Provision for multiple containers with multiple IPs
 
 # create another set of VM
 provider "azurerm" {
@@ -7,17 +6,17 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "resourcegroup" {
-  name     = "Session1.4"
+  name     = "Session2.1"
   location = "eastus"
   tags = {
     Owner = "Aingel Carbonell"
-    environment = "Jaira Tutorials"
+    environment = "Tutorials"
   }
 }
 
 
 # Create virtual network
-resource "azurerm_virtual_network" "aingelnet" {
+resource "azurerm_virtual_network" "vnetwork" {
     name                = "myVnet"
     address_space       = ["192.168.0.0/16"]
     location            = azurerm_resource_group.resourcegroup.location
@@ -38,9 +37,9 @@ resource "azurerm_subnet" "subnet" {
     count               = length(var.networksubnets)
     name                 = "subnet${count.index}"
     resource_group_name  = azurerm_resource_group.resourcegroup.name
-    virtual_network_name = azurerm_virtual_network.aingelnet.name
+    virtual_network_name = azurerm_virtual_network.vnetwork.name
     address_prefixes       = [var.networksubnets[count.index]]
-
+    /* UNTESTED: should the subnet for containers be separated? */
     delegation {
         name = "delegation"
 
@@ -113,53 +112,53 @@ resource "azurerm_network_security_group" "netsecgrouphttp" {
 }
 
 # Create network interface
-resource "azurerm_network_interface" "mynic0" {
+resource "azurerm_network_interface" "nic0" {
     count                     = 4
     name                      = "nicsub0${count.index}"
     location                  = azurerm_resource_group.resourcegroup.location
     resource_group_name       = azurerm_resource_group.resourcegroup.name
 
     ip_configuration {
-        name                          = "myNicConfiguration"
+        name                          = "nicConfiguration"
         subnet_id                     = azurerm_subnet.subnet[0].id
         private_ip_address_allocation = "Dynamic"
     }
     tags = azurerm_resource_group.resourcegroup.tags
 }
-resource "azurerm_network_interface" "mynic1" {
+resource "azurerm_network_interface" "nic1" {
     count                     = 6
     name                      = "nicsub1${count.index}"
     location                  = azurerm_resource_group.resourcegroup.location
     resource_group_name       = azurerm_resource_group.resourcegroup.name
 
     ip_configuration {
-        name                          = "myNicConfiguration"
+        name                          = "nicConfiguration"
         subnet_id                     = azurerm_subnet.subnet[1].id
         private_ip_address_allocation = "Dynamic"
     }
     tags = azurerm_resource_group.resourcegroup.tags
 }
-resource "azurerm_network_interface" "mynic2" {
+resource "azurerm_network_interface" "nic2" {
     count                     = 4
     name                      = "nicsub2${count.index}"
     location                  = azurerm_resource_group.resourcegroup.location
     resource_group_name       = azurerm_resource_group.resourcegroup.name
 
     ip_configuration {
-        name                          = "myNicConfiguration"
+        name                          = "nicConfiguration"
         subnet_id                     = azurerm_subnet.subnet[2].id
         private_ip_address_allocation = "Dynamic"
     }
     tags = azurerm_resource_group.resourcegroup.tags
 }
-resource "azurerm_network_interface" "mynic3" {
+resource "azurerm_network_interface" "nic3" {
     count                     = 2
     name                      = "nicsub3${count.index}"
     location                  = azurerm_resource_group.resourcegroup.location
     resource_group_name       = azurerm_resource_group.resourcegroup.name
 
     ip_configuration {
-        name                          = "myNicConfiguration"
+        name                          = "nicConfiguration"
         subnet_id                     = azurerm_subnet.subnet[3].id
         private_ip_address_allocation = "Dynamic"
     }
@@ -174,7 +173,6 @@ resource "random_id" "randomId" {
         # Generate a new ID only when a new resource group is defined
         resource_group = azurerm_resource_group.resourcegroup.name
     }
-
     byte_length = 8
 }
 
@@ -194,7 +192,7 @@ locals{
     vms = [
     {
         name = "webserver"
-        nic = [azurerm_network_interface.mynic0[3].id, azurerm_network_interface.mynic3[0].id],
+        nic = [azurerm_network_interface.nic0[3].id,azurerm_network_interface.nic3[0].id],
         username = "azureuser",
             publisher = "Canonical",
             offer     = "UbuntuServer",
@@ -202,7 +200,7 @@ locals{
             version   = "latest"
     },{
         name = "depmgr"
-        nic = [azurerm_network_interface.mynic1[3].id, azurerm_network_interface.mynic2[0].id],
+        nic = [azurerm_network_interface.nic1[3].id,azurerm_network_interface.nic2[0].id],
         username = "azureuser",
             publisher = "Canonical",
             offer     = "UbuntuServer",
@@ -210,7 +208,7 @@ locals{
             version   = "latest"
     },{
         name = "dbserver"
-        nic = [azurerm_network_interface.mynic1[4].id, azurerm_network_interface.mynic2[1].id, azurerm_network_interface.mynic3[1].id],
+        nic = [azurerm_network_interface.nic1[4].id,azurerm_network_interface.nic2[1].id,azurerm_network_interface.nic3[1].id],
         username = "azureuser",
             publisher = "Canonical",
             offer     = "UbuntuServer",
@@ -218,7 +216,7 @@ locals{
             version   = "latest"
     },{
         name = "appserver"
-        nic = [azurerm_network_interface.mynic1[5].id],
+        nic = [azurerm_network_interface.nic1[5].id],
         username = "azureuser",
             publisher = "Canonical",
             offer     = "UbuntuServer",
@@ -226,7 +224,7 @@ locals{
             version   = "latest"
     },{
         name = "domaincon"
-        nic = [azurerm_network_interface.mynic2[2].id],
+        nic = [azurerm_network_interface.nic2[2].id],
         username = "azureuser",
             publisher = "Canonical",
             offer     = "UbuntuServer",
@@ -234,7 +232,7 @@ locals{
             version   = "latest"
     },{
         name = "fileserver"
-        nic = [azurerm_network_interface.mynic2[3].id],
+        nic = [azurerm_network_interface.nic2[3].id],
         username = "azureuser",
             publisher = "Canonical",
             offer     = "UbuntuServer",
@@ -245,7 +243,7 @@ locals{
 }
 
 # Create storage accounts for boot diagnostics
-resource "azurerm_storage_account" "mystorageaccount" {
+resource "azurerm_storage_account" "storageaccount" {
     count                       = length(local.vms)
     name                        = "diag${random_id.randomId.hex}a${count.index}"
     resource_group_name         = azurerm_resource_group.resourcegroup.name
@@ -262,7 +260,7 @@ resource "azurerm_linux_virtual_machine" "VMS" {
     location              = azurerm_resource_group.resourcegroup.location
     resource_group_name   = azurerm_resource_group.resourcegroup.name
     network_interface_ids = local.vms[count.index].nic
-    size                  = "Standard_B1ls"
+    size                  = "Standard_B1s"
     os_disk {
         name              = "disk${local.vms[count.index].name}"
         caching           = "ReadWrite"
@@ -282,13 +280,13 @@ resource "azurerm_linux_virtual_machine" "VMS" {
         public_key     = tls_private_key.myssh.public_key_openssh
     }
     boot_diagnostics {
-        storage_account_uri = azurerm_storage_account.mystorageaccount[count.index].primary_blob_endpoint
+        storage_account_uri = azurerm_storage_account.storageaccount[count.index].primary_blob_endpoint
     }
     tags = azurerm_resource_group.resourcegroup.tags
 }
 
-## container instances
-# container network
+# container instances
+
 resource "azurerm_network_profile" "dockernet" {
   name                = "dockernetworkprofile"
   location            = azurerm_resource_group.resourcegroup.location
@@ -298,11 +296,11 @@ resource "azurerm_network_profile" "dockernet" {
     name = "dockernic"
 
     ip_configuration {
-      name      = "dockernet0ip"
+      name      = "dockerip1"
       subnet_id = azurerm_subnet.subnet[0].id
     }
     ip_configuration {
-      name  = "dockernet1ip"
+      name  = "dockerip2"
       subnet_id = azurerm_subnet.subnet[1].id
     }
   }
@@ -338,7 +336,6 @@ resource "azurerm_container_group" "dockerhost-linux" {
 
     tags = azurerm_resource_group.resourcegroup.tags
 }
-
 resource "azurerm_container_group" "dockerhost-win" {
     name                = "dockerwindows"
     location            = azurerm_resource_group.resourcegroup.location
